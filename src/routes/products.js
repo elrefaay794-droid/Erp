@@ -8,7 +8,16 @@ const { all, get, run, insert, transaction } = require('../db/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLog');
 const { generateSKU, generateBarcode } = require('../utils/codeGenerator');
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 
+function buildImageUrl(product) {
+  return {
+    ...product,
+    image_path: product.image_path
+      ? `${BASE_URL}${product.image_path}`
+      : null,
+  };
+}
 router.use(authenticate);
 
 // ===================== رفع الصور =====================
@@ -38,13 +47,7 @@ const upload = multer({
     }
   },
 });
-// قبل ما ترجع products في response
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 
-products: rows.map(p => ({
-  ...p,
-  image_path: p.image_path ? `${BASE_URL}${p.image_path}` : null
-}))
 // دمج بيانات المخزون مع كل منتج (الكمية الإجمالية عبر كل المواقع)
 function attachStockSummary(products) {
   return products.map((p) => {
@@ -92,6 +95,7 @@ router.get('/', (req, res) => {
 
   let products = all(sql, params);
   products = attachStockSummary(products);
+  products = products.map(buildImageUrl);
 
   // فلترة نواقص المخزون (تتم بعد حساب الكمية الإجمالية)
   if (low_stock === 'true') {
@@ -117,7 +121,8 @@ router.get('/:id', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
 
-  const [withStock] = attachStockSummary([product]);
+  let [withStock] = attachStockSummary([product]);
+  withStock = buildImageUrl(withStock);
 
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
@@ -134,7 +139,8 @@ router.get('/barcode/:barcode', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'لا يوجد منتج بهذا الباركود' });
 
-  const [withStock] = attachStockSummary([product]);
+  let [withStock] = attachStockSummary([product]);
+  withStock = buildImageUrl(withStock);
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
   }

@@ -48,6 +48,11 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'هذا المسار غير موجود' });
 });
 
+// صفحة طباعة الباركود المستقلة — تُخدَّم كـ HTML ثابت مباشرة
+app.get('/barcode-print', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'barcode-print.html'));
+});
+
 // SPA Catch-all: أي مسار غير API يُخدَّم بـ index.html (لدعم React Router)
 const publicPath2 = path.join(__dirname, 'public');
 if (require('fs').existsSync(publicPath2)) {

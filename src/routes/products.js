@@ -8,16 +8,7 @@ const { all, get, run, insert, transaction } = require('../db/database');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logAction } = require('../utils/auditLog');
 const { generateSKU, generateBarcode } = require('../utils/codeGenerator');
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 
-function buildImageUrl(product) {
-  return {
-    ...product,
-    image_path: product.image_path
-      ? `${BASE_URL}${product.image_path}`
-      : null,
-  };
-}
 router.use(authenticate);
 
 // ===================== رفع الصور =====================
@@ -47,9 +38,19 @@ const upload = multer({
     }
   },
 });
+// دالة مساعدة لبناء الـ URL الكامل للصورة
+function getImageUrl(req, imagePath) {
+  if (!imagePath) return null;
+  // لو الـ image_path يبدأ بـ http فهو URL كامل مسبقاً
+  if (imagePath.startsWith('http')) return imagePath;
+  // بناء الـ base URL من الـ request
+  const baseUrl = process.env.BASE_URL ||
+    `${req.protocol}://${req.get('host')}`;
+  return `${baseUrl}${imagePath}`;
+}
 
 // دمج بيانات المخزون مع كل منتج (الكمية الإجمالية عبر كل المواقع)
-function attachStockSummary(products) {
+function attachStockSummary(products, req) {
   return products.map((p) => {
     const stockRows = all(
       `SELECT l.id as location_id, l.name as location_name, l.type, COALESCE(i.quantity, 0) as quantity
@@ -62,6 +63,7 @@ function attachStockSummary(products) {
     const totalQty = stockRows.reduce((sum, r) => sum + r.quantity, 0);
     return {
       ...p,
+      image_path: getImageUrl(req, p.image_path),
       is_active: !!p.is_active,
       allow_fractional_qty: !!p.allow_fractional_qty,
       stock_by_location: stockRows,
@@ -94,8 +96,7 @@ router.get('/', (req, res) => {
   sql += ` ORDER BY p.created_at DESC`;
 
   let products = all(sql, params);
-  products = attachStockSummary(products);
-  products = products.map(buildImageUrl);
+  products = attachStockSummary(products, req);
 
   // فلترة نواقص المخزون (تتم بعد حساب الكمية الإجمالية)
   if (low_stock === 'true') {
@@ -121,8 +122,7 @@ router.get('/:id', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'المنتج غير موجود' });
 
-  let [withStock] = attachStockSummary([product]);
-  withStock = buildImageUrl(withStock);
+  const [withStock] = attachStockSummary([product], req);
 
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
@@ -139,8 +139,7 @@ router.get('/barcode/:barcode', (req, res) => {
   );
   if (!product) return res.status(404).json({ error: 'لا يوجد منتج بهذا الباركود' });
 
-  let [withStock] = attachStockSummary([product]);
-  withStock = buildImageUrl(withStock);
+  const [withStock] = attachStockSummary([product], req);
   if (!req.user.can_view_cost_price && req.user.role !== 'admin') {
     delete withStock.cost_price;
   }
@@ -358,6 +357,40 @@ router.get('/:id/movements', (req, res) => {
     [req.params.id]
   );
   res.json({ movements });
+});
+
+// GET /api/products/print/barcode?ids=1,2,3  — جلب بيانات منتجات للطباعة (بدون stock summary لتسريع الاستجابة)
+router.get('/print/barcode', (req, res) => {
+  const { ids } = req.query;
+
+  let products;
+  if (ids) {
+    const idList = ids.split(',').map(s => parseInt(s.trim())).filter(Boolean);
+    if (!idList.length) return res.json({ products: [] });
+    const placeholders = idList.map(() => '?').join(',');
+    products = all(
+      `SELECT p.id, p.name, p.name_en, p.sku, p.barcode, p.sale_price, p.image_path
+       FROM products p
+       WHERE p.id IN (${placeholders}) AND p.is_active = 1
+       ORDER BY p.name`,
+      idList
+    );
+  } else {
+    products = all(
+      `SELECT p.id, p.name, p.name_en, p.sku, p.barcode, p.sale_price, p.image_path
+       FROM products p
+       WHERE p.is_active = 1 AND p.barcode IS NOT NULL AND p.barcode != ''
+       ORDER BY p.name`
+    );
+  }
+
+  // إضافة URL كامل للصور
+  products = products.map(p => ({
+    ...p,
+    image_path: getImageUrl(req, p.image_path),
+  }));
+
+  res.json({ products, count: products.length });
 });
 
 module.exports = router;

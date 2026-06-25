@@ -1458,7 +1458,7 @@ tbody tr:hover { background: var(--ink-4); }
     </button>
 
     <div style="text-align:center; margin-top: var(--s-lg); font-size: 0.72rem; color: var(--cream-4);">
-      الرفاعي للنجف والإضاءة &copy; 2026 · جميع الحقوق محفوظة
+      الرفاعي للنجف والإضاءة &copy; 2025 · جميع الحقوق محفوظة
     </div>
   </div>
 </div>
@@ -1680,6 +1680,10 @@ tbody tr:hover { background: var(--ink-4); }
             <button class="btn btn-ghost btn-sm" onclick="openImportPage()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               استيراد
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="openBarcodePrintPage()" title="طباعة ملصقات الباركود">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              طباعة الباركود
             </button>
             <button class="btn btn-primary btn-sm" onclick="openProductModal()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -4286,7 +4290,7 @@ function renderPurchaseOrders() {
   const due   = orders.reduce((s,o) => s + (o.balance_due||0), 0);
   const draftCount = orders.filter(o => o.status === 'draft').length;
   document.getElementById('poStatCards').innerHTML = `
-    <div class="stat-card card-gold"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${fmtN(orders.length)}</div><div class="stat-meta text-muted">أمر شراء</div></div>
+    <div class="stat-card card-gold"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${orders.length}</div><div class="stat-meta text-muted">أمر شراء</div></div>
     <div class="stat-card"><div class="stat-label">إجمالي القيمة</div><div class="stat-value" style="font-size:1.3rem;">${fmt(total)} ج.م</div></div>
     <div class="stat-card"><div class="stat-label">المدفوع</div><div class="stat-value" style="font-size:1.3rem;color:var(--success);">${fmt(paid)} ج.م</div></div>
     <div class="stat-card"><div class="stat-label">المستحق</div><div class="stat-value" style="font-size:1.3rem;color:${due>0?'var(--danger)':'var(--success)'};">${fmt(due)} ج.م</div></div>
@@ -4689,17 +4693,17 @@ async function loadInstallments() {
     document.getElementById('installStatCards').innerHTML = `
       <div class="stat-card" style="--accent-glow:var(--danger-bg);">
         <div class="stat-label" style="color:var(--danger);">متأخرة</div>
-        <div class="stat-value" style="color:var(--danger);">${fmtN(od.c||0)}</div>
+        <div class="stat-value" style="color:var(--danger);">${od.c||0}</div>
         <div class="stat-meta" style="color:var(--danger);">${fmt(od.total||0)} ج.م مستحقة</div>
       </div>
       <div class="stat-card" style="--accent-glow:var(--warn-bg);">
         <div class="stat-label" style="color:var(--warn);">خلال 30 يوم</div>
-        <div class="stat-value" style="color:var(--warn);">${fmtN(up.c||0)}</div>
+        <div class="stat-value" style="color:var(--warn);">${up.c||0}</div>
         <div class="stat-meta" style="color:var(--warn);">${fmt(up.total||0)} ج.م قادمة</div>
       </div>
       <div class="stat-card" style="--accent-glow:var(--success-bg);">
         <div class="stat-label" style="color:var(--success);">مدفوعة</div>
-        <div class="stat-value" style="color:var(--success);">${fmtN(pd.c||0)}</div>
+        <div class="stat-value" style="color:var(--success);">${pd.c||0}</div>
         <div class="stat-meta" style="color:var(--success);">${fmt(pd.total||0)} ج.م مسددة</div>
       </div>
     `;

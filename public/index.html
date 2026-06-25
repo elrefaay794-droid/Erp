@@ -4286,7 +4286,7 @@ function renderPurchaseOrders() {
   const due   = orders.reduce((s,o) => s + (o.balance_due||0), 0);
   const draftCount = orders.filter(o => o.status === 'draft').length;
   document.getElementById('poStatCards').innerHTML = `
-    <div class="stat-card card-gold"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${orders.length}</div><div class="stat-meta text-muted">أمر شراء</div></div>
+    <div class="stat-card card-gold"><div class="stat-label">إجمالي الطلبات</div><div class="stat-value">${fmtN(orders.length)}</div><div class="stat-meta text-muted">أمر شراء</div></div>
     <div class="stat-card"><div class="stat-label">إجمالي القيمة</div><div class="stat-value" style="font-size:1.3rem;">${fmt(total)} ج.م</div></div>
     <div class="stat-card"><div class="stat-label">المدفوع</div><div class="stat-value" style="font-size:1.3rem;color:var(--success);">${fmt(paid)} ج.م</div></div>
     <div class="stat-card"><div class="stat-label">المستحق</div><div class="stat-value" style="font-size:1.3rem;color:${due>0?'var(--danger)':'var(--success)'};">${fmt(due)} ج.م</div></div>
@@ -4689,17 +4689,17 @@ async function loadInstallments() {
     document.getElementById('installStatCards').innerHTML = `
       <div class="stat-card" style="--accent-glow:var(--danger-bg);">
         <div class="stat-label" style="color:var(--danger);">متأخرة</div>
-        <div class="stat-value" style="color:var(--danger);">${od.c||0}</div>
+        <div class="stat-value" style="color:var(--danger);">${fmtN(od.c||0)}</div>
         <div class="stat-meta" style="color:var(--danger);">${fmt(od.total||0)} ج.م مستحقة</div>
       </div>
       <div class="stat-card" style="--accent-glow:var(--warn-bg);">
         <div class="stat-label" style="color:var(--warn);">خلال 30 يوم</div>
-        <div class="stat-value" style="color:var(--warn);">${up.c||0}</div>
+        <div class="stat-value" style="color:var(--warn);">${fmtN(up.c||0)}</div>
         <div class="stat-meta" style="color:var(--warn);">${fmt(up.total||0)} ج.م قادمة</div>
       </div>
       <div class="stat-card" style="--accent-glow:var(--success-bg);">
         <div class="stat-label" style="color:var(--success);">مدفوعة</div>
-        <div class="stat-value" style="color:var(--success);">${pd.c||0}</div>
+        <div class="stat-value" style="color:var(--success);">${fmtN(pd.c||0)}</div>
         <div class="stat-meta" style="color:var(--success);">${fmt(pd.total||0)} ج.م مسددة</div>
       </div>
     `;
